@@ -22,6 +22,15 @@ func (h *Handler) UserRegister(ctx echo.Context) error {
 		)
 	}
 
+	//TODO not sure this requirement
+	//cleanPass, err := h.libLocker.Decrypt(req.Password)
+	//if err != nil {
+	//	return echo.NewHTTPError(
+	//		http.StatusBadRequest,
+	//		err.Error(),
+	//	)
+	//}
+
 	u := &domain.User{
 		FullName:    req.FullName,
 		Password:    req.Password,
@@ -55,12 +64,21 @@ func (h *Handler) UserLogin(ctx echo.Context) error {
 		)
 	}
 
-	cred := &domain.AuthCred{
-		PhoneNumber:   req.PhoneNumber,
-		EncryptedPass: req.Password,
+	//TODO not sure this requirement
+	//cleanPass, err := h.libLocker.Decrypt(req.Password)
+	//if err != nil {
+	//	return echo.NewHTTPError(
+	//		http.StatusBadRequest,
+	//		err.Error(),
+	//	)
+	//}
+
+	u := &domain.User{
+		PhoneNumber: req.PhoneNumber,
+		Password:    req.Password,
 	}
 
-	data, err := h.authSvc.Login(cred)
+	data, err := h.authSvc.Login(u)
 	if err != nil {
 		return echo.NewHTTPError(
 			http.StatusBadRequest,
@@ -125,7 +143,7 @@ func (h *Handler) UserPatch(ctx echo.Context, id uuid.UUID) error {
 	if claimID != id.String() {
 		return echo.NewHTTPError(
 			http.StatusForbidden,
-			err.Error(),
+			cons.ErrInvalidAuthorized.Error(),
 		)
 	}
 

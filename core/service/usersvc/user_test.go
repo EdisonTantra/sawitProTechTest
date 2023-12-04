@@ -2,12 +2,13 @@ package usersvc_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/SawitProRecruitment/UserService/cons"
 	"github.com/SawitProRecruitment/UserService/core/domain"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/SawitProRecruitment/UserService/core/service/usersvc"
-	"github.com/SawitProRecruitment/UserService/generated/mock"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gstruct"
@@ -237,7 +238,7 @@ func TestValidateUserData(t *testing.T) {
 				PhoneNumber: "+6285156305",
 				Password:    "Passw0rd@",
 			},
-			want: errors.Join(cons.ErrInvalidNameLength, cons.ErrInvalidPhoneLength),
+			want: fmt.Errorf("%w; %w", cons.ErrInvalidNameLength, cons.ErrInvalidPhoneLength),
 		},
 		{
 			name: "failed invalid name, phone and password length",
@@ -246,7 +247,7 @@ func TestValidateUserData(t *testing.T) {
 				PhoneNumber: "+6285156305",
 				Password:    "Pass",
 			},
-			want: errors.Join(
+			want: fmt.Errorf("%w; %w; %w",
 				cons.ErrInvalidNameLength,
 				cons.ErrInvalidPasswordLength,
 				cons.ErrInvalidPhoneLength,
@@ -282,7 +283,7 @@ func TestValidateUserData(t *testing.T) {
 type testcaseRegister struct {
 	name          string
 	user          *domain.User
-	mockFunc      func(repo *mock.MockUserRepo)
+	mockFunc      func(repo *port.MockUserRepo)
 	assertionFunc func(newUser *domain.User, err error)
 }
 
@@ -343,7 +344,7 @@ func TestService_Register(t *testing.T) {
 				Password:    "Password123@",
 				PhoneNumber: "+625156305136",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					CreateUser(gomock.Any()).
 					Return(nil, errors.New("error occurred")).
@@ -361,7 +362,7 @@ func TestService_Register(t *testing.T) {
 				Password:    "Password123@",
 				PhoneNumber: "+625156305136",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					CreateUser(gomock.Any()).
 					Return(&domain.User{
@@ -384,7 +385,7 @@ func TestService_Register(t *testing.T) {
 	}
 
 	var (
-		mockRepo *mock.MockUserRepo
+		mockRepo *port.MockUserRepo
 		svc      *usersvc.Service
 	)
 
@@ -394,7 +395,7 @@ func TestService_Register(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			mockRepo = mock.NewMockUserRepo(mockCtrl)
+			mockRepo = port.NewMockUserRepo(mockCtrl)
 			if tc.mockFunc != nil {
 				tc.mockFunc(mockRepo)
 			}
@@ -409,7 +410,7 @@ func TestService_Register(t *testing.T) {
 type testcaseGet struct {
 	name          string
 	id            string
-	mockFunc      func(repo *mock.MockUserRepo)
+	mockFunc      func(repo *port.MockUserRepo)
 	assertionFunc func(newUser *domain.User, err error)
 }
 
@@ -426,7 +427,7 @@ func TestService_Get(t *testing.T) {
 		{
 			name: "success get by user ID",
 			id:   "1234-1234-1234-1234",
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().GetUserByID(gomock.Any()).Return(&domain.User{
 					ID:          "1234-1234-1234-1234",
 					FullName:    "Edison",
@@ -446,7 +447,7 @@ func TestService_Get(t *testing.T) {
 	}
 
 	var (
-		mockRepo *mock.MockUserRepo
+		mockRepo *port.MockUserRepo
 		svc      *usersvc.Service
 	)
 
@@ -456,7 +457,7 @@ func TestService_Get(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			mockRepo = mock.NewMockUserRepo(mockCtrl)
+			mockRepo = port.NewMockUserRepo(mockCtrl)
 			if tc.mockFunc != nil {
 				tc.mockFunc(mockRepo)
 			}
@@ -472,7 +473,7 @@ type testcasePatch struct {
 	name          string
 	id            string
 	user          *domain.User
-	mockFunc      func(repo *mock.MockUserRepo)
+	mockFunc      func(repo *port.MockUserRepo)
 	assertionFunc func(newUser *domain.User, err error)
 }
 
@@ -499,7 +500,7 @@ func TestService_Patch(t *testing.T) {
 				Password:    "Password123@",
 				PhoneNumber: "+625156305136",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					PatchUserByID(gomock.Any(), gomock.Any()).
 					Return(nil, errors.New("error occurred")).
@@ -515,7 +516,7 @@ func TestService_Patch(t *testing.T) {
 			user: &domain.User{
 				FullName: "Edison Tantra",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					PatchUserByID(gomock.Any(), gomock.Any()).
 					Return(&domain.User{
@@ -542,7 +543,7 @@ func TestService_Patch(t *testing.T) {
 			user: &domain.User{
 				Password: "Password12345!",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					PatchUserByID(gomock.Any(), gomock.Any()).
 					Return(&domain.User{
@@ -569,7 +570,7 @@ func TestService_Patch(t *testing.T) {
 			user: &domain.User{
 				PhoneNumber: "+62515630513678",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					PatchUserByID(gomock.Any(), gomock.Any()).
 					Return(&domain.User{
@@ -598,7 +599,7 @@ func TestService_Patch(t *testing.T) {
 				Password:    "Password12345!",
 				PhoneNumber: "+62515630513678",
 			},
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					PatchUserByID(gomock.Any(), gomock.Any()).
 					Return(&domain.User{
@@ -623,7 +624,7 @@ func TestService_Patch(t *testing.T) {
 	}
 
 	var (
-		mockRepo *mock.MockUserRepo
+		mockRepo *port.MockUserRepo
 		svc      *usersvc.Service
 	)
 
@@ -633,7 +634,7 @@ func TestService_Patch(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			mockRepo = mock.NewMockUserRepo(mockCtrl)
+			mockRepo = port.NewMockUserRepo(mockCtrl)
 			if tc.mockFunc != nil {
 				tc.mockFunc(mockRepo)
 			}

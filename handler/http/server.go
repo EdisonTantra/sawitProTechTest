@@ -1,27 +1,31 @@
 package sawithttp
 
 import (
-	"github.com/SawitProRecruitment/UserService/core"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/SawitProRecruitment/UserService/generated"
+	"github.com/SawitProRecruitment/UserService/lib/locker"
 	"github.com/sirupsen/logrus"
 )
 
 var _ generated.ServerInterface = (*Handler)(nil)
 
 type Handler struct {
-	logger  *logrus.Logger
-	userSvc core.UserService
-	authSvc core.AuthService
+	logger    *logrus.Logger
+	libLocker *locker.Locker
+	userSvc   port.UserService
+	authSvc   port.AuthService
 }
 
 func NewHandler(
 	logger *logrus.Logger,
-	userSvc core.UserService,
-	authSvc core.AuthService,
+	libLocker *locker.Locker,
+	userSvc port.UserService,
+	authSvc port.AuthService,
 ) *Handler {
 	return &Handler{
-		logger:  logger,
-		userSvc: userSvc,
-		authSvc: authSvc,
+		logger:    logger,
+		libLocker: libLocker,
+		userSvc:   userSvc,
+		authSvc:   authSvc,
 	}
 }

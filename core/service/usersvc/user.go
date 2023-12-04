@@ -2,21 +2,22 @@ package usersvc
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 
 	"github.com/SawitProRecruitment/UserService/cons"
-	"github.com/SawitProRecruitment/UserService/core"
 	"github.com/SawitProRecruitment/UserService/core/domain"
+	"github.com/SawitProRecruitment/UserService/core/port"
 )
 
-var _ core.UserService = (*Service)(nil)
+var _ port.UserService = (*Service)(nil)
 
 type Service struct {
-	repo core.UserRepo
+	repo port.UserRepo
 }
 
-func New(repo core.UserRepo) *Service {
+func New(repo port.UserRepo) *Service {
 	return &Service{
 		repo: repo,
 	}
@@ -26,7 +27,6 @@ func (svc *Service) Register(data *domain.User) (*domain.User, error) {
 	data.FullName = strings.TrimSpace(data.FullName)
 	data.PhoneNumber = strings.TrimSpace(data.PhoneNumber)
 	data.Password = strings.TrimSpace(data.Password)
-	//TODO decrypt from mobile di handler
 
 	if data.FullName == "" || data.PhoneNumber == "" || data.Password == "" {
 		return nil, errors.New("fullname, phone and password required")
@@ -76,30 +76,37 @@ func (svc *Service) Patch(id string, data *domain.User) (*domain.User, error) {
 }
 
 func validateUserData(data *domain.User) error {
-	var errWrap, err1, err2, err3 error
+	var errWrap error
 	if data.FullName != "" {
 		err := validateFullName(data.FullName)
 		if err != nil {
-			err1 = err
+			errWrap = err
 		}
 	}
 
 	if data.Password != "" {
 		err := validatePassword(data.Password)
 		if err != nil {
-			err2 = err
+			if errWrap == nil {
+				errWrap = err
+			} else {
+				errWrap = fmt.Errorf("%w; %w", errWrap, err)
+			}
 		}
 	}
 
 	if data.PhoneNumber != "" {
 		err := validatePhoneNumber(data.PhoneNumber)
 		if err != nil {
-			err3 = err
+			if errWrap == nil {
+				errWrap = err
+			} else {
+				errWrap = fmt.Errorf("%w; %w", errWrap, err)
+			}
 		}
 	}
 
-	if err1 != nil || err2 != nil || err3 != nil {
-		errWrap = errors.Join(err1, err2, err3)
+	if errWrap != nil {
 		return errWrap
 	}
 

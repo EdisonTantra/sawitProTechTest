@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/SawitProRecruitment/UserService/cons"
-	"github.com/SawitProRecruitment/UserService/core"
 	"github.com/SawitProRecruitment/UserService/core/domain"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	_ "github.com/lib/pq"
 )
 
-var _ core.UserRepo = (*Repository)(nil)
+var _ port.UserRepo = (*Repository)(nil)
 
 type Repository struct {
 	sawitDB *sqlx.DB

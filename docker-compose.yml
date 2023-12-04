@@ -3,9 +3,7 @@ services:
     build: .
     container_name: sawit_app
     ports:
-      - "8080:1323"
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/database?sslmode=disable
+      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy

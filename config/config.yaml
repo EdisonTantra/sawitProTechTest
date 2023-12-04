@@ -3,15 +3,16 @@ auth:
   privateKeyPath: generated/cert/sawitapp
   publicKeyPath: generated/cert/sawitapp.pub
   tokenExpDuration: 2h
-  encryptSecretKey: t4dNxLLolpX8UpehYb1RwbVLF1xFBNHu
+aes:
+  secretKey: t4dNxLLolpX8UpehYb1RwbVLF1xFBNHu
 http:
-  address: localhost:8080
+  address: 0.0.0.0:8080 #change into localhost if not docker
   prefixPath: /api/v1
   readTimeout: 5s
   writeTimeout: 5s
   readHeaderTimeout: 5s
 postgresql:
-  host: localhost
+  host: db #change into localhost if not docker
   port: 5432
   db: database
   username: postgres

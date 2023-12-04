@@ -12,11 +12,6 @@ type User struct {
 	UpdatedAt   *time.Time `json:"updated_at"`
 }
 
-type AuthCred struct {
-	PhoneNumber   string `json:"phone_number"`
-	EncryptedPass string `json:"password"`
-}
-
 type AuthData struct {
 	ID          string `json:"id"`
 	AccessToken string `json:"access_token"`

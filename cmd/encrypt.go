@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
+	"github.com/SawitProRecruitment/UserService/lib/locker"
 	"github.com/spf13/cobra"
 )
 
@@ -20,16 +21,14 @@ var encryptCmd = &cobra.Command{
 		trimmed := strings.TrimSpace(plainText)
 
 		cfg := initConfig()
-		secretKey := cfg.Auth.EncryptSecretKey
-		res := encryptText(trimmed, secretKey)
+		keyLock := locker.New(cfg.AES.SecretKey)
+		result, err := keyLock.Encrypt(trimmed)
+		if err != nil {
+			log.Fatalf("err: %v", err)
+		}
 
-		fmt.Printf("plain text: %s\n", plainText)
-		fmt.Println("result:")
-		fmt.Println(res)
+		log.Printf("plain text: %s\n", plainText)
+		log.Println("encrypted result:")
+		log.Println(result)
 	},
-}
-
-func encryptText(text string, key string) string {
-	//TODO implement
-	return "result"
 }

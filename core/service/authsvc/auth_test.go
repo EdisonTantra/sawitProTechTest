@@ -1,31 +1,39 @@
 package authsvc_test
 
 import (
+	"log"
 	"testing"
 	"time"
 
 	"github.com/SawitProRecruitment/UserService/core/domain"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/SawitProRecruitment/UserService/core/service/authsvc"
-	"github.com/SawitProRecruitment/UserService/generated/mock"
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gstruct"
+)
+
+const (
+	PrivateKeyPath = "../../../generated/cert/sawitapp"
+	PublicKeyPath  = "../../../generated/cert/sawitapp.pub"
+	ExpDuration    = 2 * time.Hour
 )
 
 type testcaseLogin struct {
 	name          string
 	phone         string
 	pass          string
-	mockFunc      func(repo *mock.MockUserRepo)
+	mockFunc      func(repo *port.MockUserRepo)
 	assertionFunc func(tokenData *domain.AuthData, err error)
 }
 
 func TestService_Login(t *testing.T) {
 	testcases := []testcaseLogin{
 		{
-			name:  "failed login",
+			name:  "success login",
 			phone: "+6285156305136",
 			pass:  "Passw0rd!",
-			mockFunc: func(repo *mock.MockUserRepo) {
+			mockFunc: func(repo *port.MockUserRepo) {
 				repo.EXPECT().
 					Login(gomock.Any(), gomock.Any()).
 					Return(&domain.User{
@@ -37,14 +45,18 @@ func TestService_Login(t *testing.T) {
 					Times(1)
 			},
 			assertionFunc: func(tokenData *domain.AuthData, err error) {
-				Expect(tokenData).To(BeNil())
-				Expect(err).To(HaveOccurred())
+				Expect(*tokenData).To(
+					MatchFields(IgnoreExtras, Fields{
+						"ID":          Equal("1234-1234-1234-1234"),
+						"AccessToken": Not(BeNil()),
+					}))
+				Expect(err).To(BeNil())
 			},
 		},
 	}
 
 	var (
-		mockRepo *mock.MockUserRepo
+		mockRepo *port.MockUserRepo
 	)
 
 	for _, tc := range testcases {
@@ -53,27 +65,25 @@ func TestService_Login(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			mockRepo = mock.NewMockUserRepo(mockCtrl)
+			mockRepo = port.NewMockUserRepo(mockCtrl)
 			if tc.mockFunc != nil {
 				tc.mockFunc(mockRepo)
 			}
 
-			//TODO benerin
 			opts := authsvc.ServiceOpts{
-				PrvKeyPath:       "privatepath",
-				PubKeyPath:       "publicPath",
-				TokenExpDuration: 2 * time.Hour,
-				EncryptSecretKey: "abcdef",
+				PrvKeyPath:       PrivateKeyPath,
+				PubKeyPath:       PublicKeyPath,
+				TokenExpDuration: ExpDuration,
 			}
 
 			svc, err := authsvc.New(opts, mockRepo)
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 
-			req := &domain.AuthCred{
-				PhoneNumber:   tc.phone,
-				EncryptedPass: tc.pass,
+			req := &domain.User{
+				PhoneNumber: tc.phone,
+				Password:    tc.pass,
 			}
 
 			tokenData, err := svc.Login(req)
@@ -85,25 +95,41 @@ func TestService_Login(t *testing.T) {
 type testcaseVerify struct {
 	name          string
 	authHeader    string
-	mockFunc      func(repo *mock.MockUserRepo)
+	isValid       bool
+	mockFunc      func(repo *port.MockUserRepo)
 	assertionFunc func(id string, err error)
 }
 
 func TestService_VerifyAuthHeader(t *testing.T) {
-	//TODO benerin
 	testcases := []testcaseVerify{
 		{
-			name:       "failed ",
-			authHeader: "Bearer xxxx",
+			name:       "failed invalid token format",
+			authHeader: "token",
 			assertionFunc: func(id string, err error) {
-				Expect(id).To(BeNil())
+				Expect(id).To(BeEmpty())
+				Expect(err).To(HaveOccurred())
+			},
+		},
+		{
+			name:       "failed invalid token type",
+			authHeader: "bear token",
+			assertionFunc: func(id string, err error) {
+				Expect(id).To(BeEmpty())
+				Expect(err).To(HaveOccurred())
+			},
+		},
+		{
+			name:       "failed invalid token",
+			authHeader: "Bearer xxx",
+			assertionFunc: func(id string, err error) {
+				Expect(id).To(BeEmpty())
 				Expect(err).To(HaveOccurred())
 			},
 		},
 	}
 
 	var (
-		mockRepo *mock.MockUserRepo
+		mockRepo *port.MockUserRepo
 	)
 
 	for _, tc := range testcases {
@@ -112,22 +138,20 @@ func TestService_VerifyAuthHeader(t *testing.T) {
 			mockCtrl := gomock.NewController(t)
 			defer mockCtrl.Finish()
 
-			mockRepo = mock.NewMockUserRepo(mockCtrl)
+			mockRepo = port.NewMockUserRepo(mockCtrl)
 			if tc.mockFunc != nil {
 				tc.mockFunc(mockRepo)
 			}
 
-			//TODO benerin
 			opts := authsvc.ServiceOpts{
-				PrvKeyPath:       "privatepath",
-				PubKeyPath:       "publicPath",
-				TokenExpDuration: 2 * time.Hour,
-				EncryptSecretKey: "abcdef",
+				PrvKeyPath:       PrivateKeyPath,
+				PubKeyPath:       PublicKeyPath,
+				TokenExpDuration: ExpDuration,
 			}
 
 			svc, err := authsvc.New(opts, mockRepo)
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 
 			id, err := svc.VerifyAuthHeader(tc.authHeader)

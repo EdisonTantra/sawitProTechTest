@@ -1,37 +1,33 @@
 package authsvc
 
 import (
-	"crypto/aes"
-	"encoding/base64"
 	"errors"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/SawitProRecruitment/UserService/cons"
-	"github.com/SawitProRecruitment/UserService/core"
 	"github.com/SawitProRecruitment/UserService/core/domain"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var _ core.AuthService = (*Service)(nil)
+var _ port.AuthService = (*Service)(nil)
 
 type Service struct {
 	tokenPrvKey      []byte
 	tokenPubKey      []byte
 	tokenExpDuration time.Duration
-	encryptSecretKey string
-	repo             core.UserRepo
+	repo             port.UserRepo
 }
 
 type ServiceOpts struct {
 	PrvKeyPath       string
 	PubKeyPath       string
 	TokenExpDuration time.Duration
-	EncryptSecretKey string
 }
 
-func New(opts ServiceOpts, repo core.UserRepo) (*Service, error) {
+func New(opts ServiceOpts, repo port.UserRepo) (*Service, error) {
 	prvKey, err := os.ReadFile(opts.PrvKeyPath)
 	if err != nil {
 		return nil, err
@@ -46,29 +42,12 @@ func New(opts ServiceOpts, repo core.UserRepo) (*Service, error) {
 		tokenPrvKey:      prvKey,
 		tokenPubKey:      pubKey,
 		tokenExpDuration: opts.TokenExpDuration,
-		encryptSecretKey: opts.EncryptSecretKey,
 		repo:             repo,
 	}, nil
 }
 
-func (svc *Service) Login(req *domain.AuthCred) (*domain.AuthData, error) {
-
-	////TODO remove
-	//encPass, err := svc.auth.EncryptPass(req.EncryptedPass)
-	//log.Println("encPass")
-	//log.Println(encPass)
-	//
-	////TODO decrypt password
-	//cleanPass, err := svc.auth.DecryptPass(req.EncryptedPass)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//log.Println("cleanPass")
-	//log.Println(cleanPass)
-
-	cleanPass := req.EncryptedPass
-	data, err := svc.repo.Login(req.PhoneNumber, cleanPass)
+func (svc *Service) Login(req *domain.User) (*domain.AuthData, error) {
+	data, err := svc.repo.Login(req.PhoneNumber, req.Password)
 	if err != nil {
 		return nil, err
 	}
@@ -103,38 +82,6 @@ func (svc *Service) VerifyAuthHeader(authHeader string) (string, error) {
 	}
 
 	return id, nil
-}
-
-func (svc *Service) EncryptPass(pass string) (string, error) {
-	secretKey := []byte(svc.encryptSecretKey)
-	textByte := []byte(pass)
-	out := make([]byte, len(textByte))
-
-	c, err := aes.NewCipher(secretKey)
-	if err != nil {
-		return "", err
-	}
-
-	c.Encrypt(out, textByte)
-	return base64.StdEncoding.EncodeToString(out), nil
-}
-
-func (svc *Service) DecryptPass(base64Pass string) (string, error) {
-	secretKey := []byte(svc.encryptSecretKey)
-	c, err := aes.NewCipher(secretKey)
-	if err != nil {
-		return "", err
-	}
-
-	data, err := base64.StdEncoding.DecodeString(base64Pass)
-	if err != nil {
-		return "", err
-	}
-
-	res := make([]byte, len(data))
-	c.Decrypt(res, data)
-
-	return string(data), nil
 }
 
 func (svc *Service) generateAccessToken(data *domain.User) (string, error) {

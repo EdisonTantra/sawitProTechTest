@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SawitProRecruitment/UserService/core"
+	"github.com/SawitProRecruitment/UserService/core/port"
 	"github.com/SawitProRecruitment/UserService/core/service/authsvc"
 	"github.com/SawitProRecruitment/UserService/generated"
 	sawithttp "github.com/SawitProRecruitment/UserService/handler/http"
@@ -28,6 +28,7 @@ type Config struct {
 	Auth   AuthConfig   `json:"auth"`
 	Server ServerConfig `json:"http"`
 	DB     PsqlConfig   `json:"postgresql"`
+	AES    AESConfig    `json:"aes"`
 }
 
 type ServerConfig struct {
@@ -54,7 +55,10 @@ type AuthConfig struct {
 	TokenPrivateKeyPath string        `json:"privateKeyPath"`
 	TokenPublicKeyPath  string        `json:"publicKeyPath"`
 	TokenExpDuration    time.Duration `json:"tokenExpDuration"`
-	EncryptSecretKey    string        `json:"encryptSecretKey"`
+}
+
+type AESConfig struct {
+	SecretKey string `json:"secretKey"`
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -135,13 +139,13 @@ func initPostgres(ctx context.Context, cfg PsqlConfig) (*postgres.Repository, er
 	return repo, nil
 }
 
-func initServer(cfg ServerConfig, handler *sawithttp.Handler) http.Server {
+func initServer(cfg ServerConfig, handler *sawithttp.Handler) *http.Server {
 	e := echo.New()
 	e.Use(handler.MiddlewareLogging)
 	e.Use(handler.MiddlewareError)
 
 	generated.RegisterHandlersWithBaseURL(e, handler, cfg.PrefixPath)
-	s := http.Server{
+	s := &http.Server{
 		Addr:              cfg.Address,
 		Handler:           e,
 		ReadTimeout:       cfg.ReadTimeout,
@@ -152,12 +156,11 @@ func initServer(cfg ServerConfig, handler *sawithttp.Handler) http.Server {
 	return s
 }
 
-func initAuthSvc(cfg AuthConfig, repo core.UserRepo) (*authsvc.Service, error) {
+func initAuthSvc(cfg AuthConfig, repo port.UserRepo) (*authsvc.Service, error) {
 	opts := authsvc.ServiceOpts{
 		PrvKeyPath:       cfg.TokenPrivateKeyPath,
 		PubKeyPath:       cfg.TokenPublicKeyPath,
 		TokenExpDuration: cfg.TokenExpDuration,
-		EncryptSecretKey: cfg.EncryptSecretKey,
 	}
 
 	return authsvc.New(opts, repo)
