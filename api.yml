@@ -1,0 +1,278 @@
+# This is the OpenAPI specification for your service. It is used to generate the client code.
+# To generate the server code, use the Gradle task `openApiGenerate`. The 
+# generated code will be placed in `build/generate-resources/main`.
+#
+# We will evaluate you based on how well you design your API.
+# 1. How well it follows REST principles.
+# 2. How easy it is to understand and use.
+#
+# References
+# 1. https://swagger.io/specification/
+openapi: "3.0.0"
+info:
+  title: User Service
+  description: |-
+    The User Service is like the backstage manager for user stuff. It takes care of making sure people are who they say they are when they log in, helps them sign up, and manages their profiles. If you're a developer, you can use the User Service to handle things like checking if someone is logged in, getting their info, and letting them tweak their account details.
+  version: 1.0.0
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8080/api/v1
+tags:
+  - name: user
+    description: Operations about user
+paths:
+  /users/register:
+    post:
+      tags:
+      - user
+      summary: Register user endpoint
+      description: Register new user to application
+      operationId: userRegister
+      requestBody:
+        description: User data add to the registered user
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+      responses:
+        '200':
+          description: Success register new user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserRegisterResponse"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/login:
+    post:
+      tags:
+      - user
+      summary: Logs user into the system
+      description: ''
+      operationId: userLogin
+      requestBody:
+        description: User credentials
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Success register new user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserLoginResponse"
+        '400':
+          description: Invalid user credentials request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /users/{id}:
+    get:
+      tags:
+      - user
+      summary: Get user profile by ID
+      description: This can only be done by the logged in user.
+      operationId: userDetail
+      parameters:
+        - name: id
+          in: path
+          description: 'The user ID that needs to be fetched.'
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDetailResponse"
+        '403':
+          description: Unauthorized to access this page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - bearerAuth: []
+    patch:
+      tags:
+      - user
+      summary: Update partial data of user
+      description: This can only be done by the logged in user.
+      operationId: userPatch
+      parameters:
+        - name: id
+          in: path
+          description: 'The user ID that needs to be fetched.'
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        description: Update an existent user in the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatchRequest'
+      responses:
+        '200':
+          description: Success update partial data of user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPatchResponse"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '403':
+          description: Unauthorized to access this page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        '409':
+          description: "Data conflict with another user. e.g: phone number"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+      security:
+        - bearerAuth: []
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required:
+        - message
+        - details
+      properties:
+        message:
+          type: string
+          example: error occurred
+        details:
+          type: array
+          items:
+            type: string
+            example:
+            - "some details 1"
+            - "some details 2"
+    UserRegisterRequest:
+      type: object
+      required:
+        - phone_number
+        - full_name
+        - password
+      properties:
+        phone_number:
+          type: string
+          example: "+6285156305136"
+        full_name:
+          type: string
+          example: "Edison Tantra"
+        password:
+          type: string
+          example: "bmV2ZXJnb25uYWdpdmV5b3V1cG5ldmVyZ29ubmFsZXR5b3Vkb3du"
+    UserRegisterResponse:
+      type: object
+      required:
+        - id
+        - full_name
+        - phone_number
+      properties:
+        id:
+          type: string
+          example: "5dec62d8-c021-49b8-996a-4f7fabcdb500"
+        full_name:
+          type: string
+          example: "Edison Tantra"
+        phone_number:
+          type: string
+          example: "+6285156305136"
+    UserLoginRequest:
+      type: object
+      required:
+        - phone_number
+        - password
+      properties:
+        phone_number:
+          type: string
+          example: "+6285156305136"
+        password:
+          type: string
+          example: "bmV2ZXJnb25uYWdpdmV5b3V1cG5ldmVyZ29ubmFsZXR5b3Vkb3du"
+    UserLoginResponse:
+      type: object
+      required:
+        - id
+        - access_token
+      properties:
+        id:
+          type: string
+          example: "5dec62d8-c021-49b8-996a-4f7fabcdb500"
+        access_token:
+          type: string
+    UserDetailResponse:
+      type: object
+      required:
+        - id
+        - full_name
+        - phone_number
+      properties:
+        id:
+          type: string
+          example: "5dec62d8-c021-49b8-996a-4f7fabcdb500"
+        full_name:
+          type: string
+          example: "Edison Tantra"
+        phone_number:
+          type: string
+          example: "+6285156305136"
+    UserPatchRequest:
+      type: object
+      required:
+        - phone_number
+        - full_name
+      properties:
+        phone_number:
+          type: string
+          example: "+6285156305136"
+        full_name:
+          type: string
+          example: "Edison Tantra"
+    UserPatchResponse:
+      type: object
+      required:
+        - id
+        - full_name
+        - phone_number
+      properties:
+        id:
+          type: string
+          example: "5dec62d8-c021-49b8-996a-4f7fabcdb500"
+        full_name:
+          type: string
+          example: "Edison Tantra"
+        phone_number:
+          type: string
+          example: "+6285156305136"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

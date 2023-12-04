@@ -1,0 +1,22 @@
+env: dev
+auth:
+  privateKeyPath: generated/cert/sawitapp
+  publicKeyPath: generated/cert/sawitapp.pub
+  tokenExpDuration: 2h
+  encryptSecretKey: t4dNxLLolpX8UpehYb1RwbVLF1xFBNHu
+http:
+  address: localhost:8080
+  prefixPath: /api/v1
+  readTimeout: 5s
+  writeTimeout: 5s
+  readHeaderTimeout: 5s
+postgresql:
+  host: localhost
+  port: 5432
+  db: database
+  username: postgres
+  password: postgres
+  sslMode: false
+  maxOpenConn: 30
+  maxIdleConn: 15
+  maxIdleTime: 600s
